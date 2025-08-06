@@ -16,10 +16,10 @@ services:
       restart_policy:
         condition: any
 
-  account-microservice:
+  api-service:
     restart: always
-    build: ./account-microservice
-    image: account-microservice
+    build: ./api-service
+    image: api-service
     depends_on:
       - mongo
     deploy:

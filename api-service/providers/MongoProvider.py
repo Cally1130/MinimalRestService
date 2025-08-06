@@ -3,6 +3,7 @@ import os
 import pymongo
 from bson import ObjectId
 from bson.json_util import dumps
+from flask import jsonify
 
 
 class JSONEncoder(json.JSONEncoder):
@@ -33,51 +34,31 @@ class MongoProvider(object):
 			print(f"❌ Failed to connect to MongoDB: {e}")
 			raise e
 		
-		self.mydb = self.myclient["local"]
-		self.mycollection = self.mydb["startup_log"]
+		self.mydb = self.myclient["team"]
+		self.mycollection = self.mydb["user"]
 
 
-	def create_user(self, payload):
-		"""
-		Create a user with the information provided in the payload
-		:param payload: dict
-			Dictionary passed as input
-		:return: (dict, int)
-			Response JSON, Error code
-		"""
-		if self.mycollection.count_documents({'id': payload['id']}, limit=1) != 0:
-			return {"error": "Found user with existing ID"}, 409
-		else:
-			self.mycollection.insert_one(payload)
-			return json.loads(JSONEncoder().encode(payload)), 201
+	def create_user(self, newUser):
+		self.mycollection.insert_one(newUser)
+		return json.loads(JSONEncoder().encode(newUser)), 201
 
 	def read_user(self, user_id):
-		# Debug the connection and collection
-		print(f"Database: {self.mydb.name}")
-		print(f"Collection: {self.mycollection.name}")
-		
-		# Check if collection exists
-		collections = self.mydb.list_collection_names()
-		print(f"Available collections: {collections}")
-		
-		# Count documents
-		count = self.mycollection.count_documents({})
-		print(f"Document count: {count}")
-		
-		# Try find_one with empty query
-		user = self.mycollection.find_one({})
-		print(f"find_one({{}}): {user}")
-		
-		# Try find with limit
-		cursor = self.mycollection.find({"pid": "1"}).limit(1)
-		docs = list(cursor)
-		print(f"find({{}}).limit(1): {docs}")
 		
 		if user:
 			user = JSONEncoder().encode(user)
 			return json.loads(user), 200
 		else:
 			return {"error": "no documents found"}, 404
+		
+	def read_all_startup_logs(self):
+		logs = self.mycollection.find({})
+		logs_list = list(logs)
+		print(logs_list)
+		
+		# Use dumps and parse back to dict for consistent return format
+		json_string = dumps(logs_list)
+		logs_dict = json.loads(json_string)
+		return {"logs": logs_dict}, 200
 
 	def update_user(self, payload):
 		"""
