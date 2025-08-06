@@ -21,9 +21,21 @@ class MongoProvider(object):
 		"""
 		Create the connection with mongoDB
 		"""
+		# mongodb_uri = os.getenv('MONGODB_URI', default='mongodb://localhost:27017/')
+
 		self.myclient = pymongo.MongoClient(f"mongodb://{os.environ.get('MONGO_URL', 'localhost')}:{os.environ.get('MONGO_PORT', 27017)}/")
-		self.mydb = self.myclient["MyProject"]
-		self.mycol = self.mydb["users"]
+		
+		# Test the connection
+		try:
+			self.myclient.server_info()
+			print("✅ Connected to MongoDB successfully!")
+		except pymongo.errors.ServerSelectionTimeoutError as e:
+			print(f"❌ Failed to connect to MongoDB: {e}")
+			raise e
+		
+		self.mydb = self.myclient["local"]
+		self.mycollection = self.mydb["startup_log"]
+
 
 	def create_user(self, payload):
 		"""
@@ -33,28 +45,39 @@ class MongoProvider(object):
 		:return: (dict, int)
 			Response JSON, Error code
 		"""
-		if self.mycol.count_documents({'id': payload['id']}, limit=1) != 0:
+		if self.mycollection.count_documents({'id': payload['id']}, limit=1) != 0:
 			return {"error": "Found user with existing ID"}, 409
 		else:
-			self.mycol.insert_one(payload)
+			self.mycollection.insert_one(payload)
 			return json.loads(JSONEncoder().encode(payload)), 201
 
 	def read_user(self, user_id):
-		"""
-		Read a user from the database given its id
-		:param user_id: int
-			Id of the user
-		:return: (dict, int)
-			Response JSON, Error code
-		"""
-		if self.mycol.count_documents({'id': user_id}, limit=1) != 0:
-			user_query = {"id": user_id}
-
-			user = self.mycol.find_one(user_query)
+		# Debug the connection and collection
+		print(f"Database: {self.mydb.name}")
+		print(f"Collection: {self.mycollection.name}")
+		
+		# Check if collection exists
+		collections = self.mydb.list_collection_names()
+		print(f"Available collections: {collections}")
+		
+		# Count documents
+		count = self.mycollection.count_documents({})
+		print(f"Document count: {count}")
+		
+		# Try find_one with empty query
+		user = self.mycollection.find_one({})
+		print(f"find_one({{}}): {user}")
+		
+		# Try find with limit
+		cursor = self.mycollection.find({"pid": "1"}).limit(1)
+		docs = list(cursor)
+		print(f"find({{}}).limit(1): {docs}")
+		
+		if user:
 			user = JSONEncoder().encode(user)
 			return json.loads(user), 200
 		else:
-			return {"error": "user not found"}, 400
+			return {"error": "no documents found"}, 404
 
 	def update_user(self, payload):
 		"""
@@ -64,12 +87,12 @@ class MongoProvider(object):
 		:return: (dict, int)
 			Response JSON, Error code
 		"""
-		if self.mycol.count_documents({'id': payload['id']}, limit=1) != 0: # Check if user exists in DB
+		if self.mycollection.count_documents({'id': payload['id']}, limit=1) != 0: # Check if user exists in DB
 			print("Found a user in DB with this id")
 			user_query = {"id": payload['id']}
 			new_values = {"$set": payload}
 
-			x = self.mycol.update_one(user_query, new_values)
+			x = self.mycollection.update_one(user_query, new_values)
 			if x.modified_count != 0:
 				return {"message": "Success"}, 201
 			else:
@@ -87,7 +110,7 @@ class MongoProvider(object):
 			Response JSON, Error code
 		"""
 		user_query = {"id": user_id}
-		x = self.mycol.delete_one(user_query)
+		x = self.mycollection.delete_one(user_query)
 		if x.deleted_count != 0:
 			return {"message": "Success"}, 200
 

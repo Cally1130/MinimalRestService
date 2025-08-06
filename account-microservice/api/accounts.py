@@ -10,6 +10,9 @@ def create_user(user_payload):
 
 @inject
 def read_user(user_id):
+    print(user_id)
+    user = data_provider.read_user(user_id)
+    print(user)
     return data_provider.read_user(user_id)
 
 @inject

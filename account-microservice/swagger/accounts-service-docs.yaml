@@ -10,7 +10,7 @@ info:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
 
-basePath: /v1.0
+basePath: /mongodb
 
 schemes:
  - http
@@ -84,8 +84,8 @@ paths:
         responses:
           '200':
             description: 'Fetch a user from the database'
-            schema:
-                $ref: '#/definitions/User'
+            # schema:
+            #     $ref: '#/definitions/User'
       delete:
         tags:
         - admins
