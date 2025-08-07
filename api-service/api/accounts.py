@@ -17,7 +17,7 @@ def read_user(user_id):
 
 @inject
 def read_all_users():
-    return data_provider.read_all_startup_logs()
+    return data_provider.read_all_users()
 
 # @inject
 # def update_user(user_payload):

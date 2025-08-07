@@ -42,15 +42,15 @@ class MongoProvider(object):
 		self.mycollection.insert_one(newUser)
 		return json.loads(JSONEncoder().encode(newUser)), 201
 
-	def read_user(self, user_id):
+	# def read_user(self, user_id):
 		
-		if user:
-			user = JSONEncoder().encode(user)
-			return json.loads(user), 200
-		else:
-			return {"error": "no documents found"}, 404
+	# 	if user:
+	# 		user = JSONEncoder().encode(user)
+	# 		return json.loads(user), 200
+	# 	else:
+	# 		return {"error": "no documents found"}, 404
 		
-	def read_all_startup_logs(self):
+	def read_all_users(self):
 		logs = self.mycollection.find({})
 		logs_list = list(logs)
 		print(logs_list)
